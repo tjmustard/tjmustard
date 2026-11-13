@@ -1,0 +1,6 @@
+.zshrc.local
+.zshrc.backup-*
+.zprofile.backup-*
+.DS_Store
+.zcompdump*
+.zsh_history

@@ -1,0 +1,86 @@
+# ~/.zshrc — portable zsh setup
+# Edit with `zshrc`, reload with `usource`.
+# Built from the "Portable Zsh and Terminal Setup" document, adapted for this
+# machine (2026-11-13): tools live in ~/.local/bin (no brew rights on this
+# account), plugins are cloned under ~/.config/zsh/plugins, and the nvm block is
+# kept because `rig` and `node` come from it. Original file kept at
+# ~/.zshrc.backup-20261113.
+
+# --- Machine env (this box) -------------------------------------------------
+[[ -f "$HOME/.local/bin/env" ]] && . "$HOME/.local/bin/env"
+
+# --- Homebrew ---------------------------------------------------------------
+[[ -x /opt/homebrew/bin/brew ]] && eval "$(/opt/homebrew/bin/brew shellenv)"
+
+# --- Exports ----------------------------------------------------------------
+typeset -U path                      # drop duplicate PATH entries
+path=("$HOME/.local/bin" $path)
+export EDITOR=vim
+export VISUAL=$EDITOR
+export LANG=en_US.UTF-8
+export CLICOLOR=1                    # coloured `ls` on macOS
+
+# --- History ----------------------------------------------------------------
+HISTFILE=~/.zsh_history
+HISTSIZE=50000
+SAVEHIST=50000
+setopt SHARE_HISTORY                 # one history across open tabs
+setopt HIST_IGNORE_ALL_DUPS          # keep only the newest copy of a command
+setopt HIST_IGNORE_SPACE             # a leading space keeps a command out of history
+setopt HIST_REDUCE_BLANKS
+setopt EXTENDED_HISTORY              # store timestamps
+setopt HIST_VERIFY                   # show an expanded history command before running it
+
+# --- Options ----------------------------------------------------------------
+setopt AUTO_CD                       # type a directory name to enter it
+setopt AUTO_PUSHD PUSHD_IGNORE_DUPS  # `cd -<Tab>` walks recent directories
+setopt INTERACTIVE_COMMENTS          # allow a # comment at the prompt
+
+# --- Completion -------------------------------------------------------------
+# -i: Homebrew's site-functions are owned by the admin account here, so
+# compinit calls them "insecure" and stops to ask on every new shell.
+autoload -Uz compinit && compinit -i
+zstyle ':completion:*' menu select
+zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
+
+# --- Aliases ----------------------------------------------------------------
+alias usource='source ~/.zshrc && echo "zshrc reloaded"'
+alias zshrc='${EDITOR} ~/.zshrc'
+alias ll='ls -l'
+alias la='ls -la'
+alias ..='cd ..'
+alias ...='cd ../..'
+alias grep='grep --color=auto'
+alias gs='git status'
+alias gd='git diff'
+alias ga='git add'
+alias gc='git commit'
+alias gp='git push'
+alias gl='git log --oneline --graph --decorate -20'
+command -v eza >/dev/null && alias lt='eza -T --git-ignore'
+command -v bat >/dev/null && alias cat='bat --paging=never'
+
+# --- Functions --------------------------------------------------------------
+mkcd() { mkdir -p "$1" && cd "$1"; }
+
+# --- Tools (each is skipped when its binary is missing) ----------------------
+command -v starship >/dev/null && eval "$(starship init zsh)"
+command -v zoxide   >/dev/null && eval "$(zoxide init zsh)"      # z and zi
+command -v fzf      >/dev/null && source <(fzf --zsh)            # Ctrl-R, Ctrl-T, Alt-C
+
+ZSH_PLUGINS=${XDG_CONFIG_HOME:-$HOME/.config}/zsh/plugins
+[[ -f $ZSH_PLUGINS/zsh-autosuggestions/zsh-autosuggestions.zsh ]] &&
+  source $ZSH_PLUGINS/zsh-autosuggestions/zsh-autosuggestions.zsh
+
+# --- Machine env (this box): node via nvm -----------------------------------
+# `rig` and the OpenRig daemon resolve node from here; do not drop this block.
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
+# --- Local overrides --------------------------------------------------------
+# Machine-specific settings and secrets belong here, never in this file.
+[[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
+
+# Syntax highlighting must load last, after the aliases it colours.
+[[ -f $ZSH_PLUGINS/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]] &&
+  source $ZSH_PLUGINS/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
